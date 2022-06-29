@@ -41,6 +41,15 @@ import java.util.*;
 	Map<String, Object> model = new HashMap<>();
 	if (isNumeric(bookingId)) {
 	String sql = "SELECT * FROM bookings WHERE bookingId=" + bookingId;
+	
+	/*
+	
+		In the above line of code a SQL query is being generated but because the isNumeric() method is buggy it is a possibility that bookingId can contain special characters which can break the SQL query and this can lead to SQL injection attacks. 
+
+		To solve it for this time and to prevent any future occurance of the same. It is highly recommended to use parameterized query whenever there is a requirement to make SQL queries by appending the user-input. 
+	
+	*/
+	
 	Booking booking = null;
 	jdbcTemplate.query(sql, (ResultSetExtractor) rs -> {
 	if (rs.next())
@@ -57,7 +66,13 @@ import java.util.*;
 	@RequestParam(value = "contactNumber") String contactNumber)) {
 	Map<String, Object> model = new HashMap<>();
 	if (isNumeric(bookingId)) {
-	String sqlPrepared = "UPDATE bookings SET contactNumber = '%s' WHERE bookingId=" + bookingId;
+	String sqlPrepared = "UPDATE bookings SET contactNumber = '%s' WHERE bookingId=" + bookingId; 
+	
+	/*
+		As mentioned above, it is recommended that parameterized queries should be use to pass user inputs to SQL queries. 
+	
+	*/
+	
 	String sql = String.format(sqlPrepared, contactNumber);
 	jdbcTemplate.update(sql);
 	model.put("newContact", contactNumber);
@@ -75,7 +90,21 @@ import java.util.*;
 	});
 	}
 
-	private boolean isNumeric(String strNum) {
+	private boolean isNumeric(String strNum) { 
+	
+	/*
+	
+	This method is not checking if the given string is a number or not. Insted, the logic is detecting if the string contains a number or not. 
+	
+	For example, 
+	
+	This method will return true if the strNum is '123' <- only numbers
+	This method will return true if the strNum is 'abcd123' <- numbers and alphabets
+	This method will return false if the strNum is 'abcd' <- only alphabets
+	
+	This method should be fixed and a strict check should be implemented to make sure it retunrs true only if theinput contains numbers and no alphabets.
+	
+	*/
 	if (strNum == null) {
 	return false;
 	}

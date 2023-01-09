@@ -1,0 +1,1851 @@
+openapi: 3.1.0
+info:
+  title: CDD Internal API
+  description: API used internally for backend-frontend communication
+  version: 0.0.1
+  license:
+    name: Proprietary
+    url: https://support.collaborativedrug.com/hc/en-us/requests/new
+  contact:
+    url: https://support.collaborativedrug.com/hc/en-us/requests/new
+servers:
+  - url: https://pentest.cdd.io/api/internal/v1
+tags:
+  - name: Accounts
+    description: Accounts management
+  - name: Vaults
+    description: Vaults management
+  - name: Projects
+    description: Projects management
+  - name: Users
+    description: Users management
+paths:
+  /accounts:
+    get:
+      tags:
+        - Accounts
+      summary: ✓ List accounts
+      description: >
+        List accounts associated with currently logged on user or all for
+        site-admin The number of vaults and users is the total number, the
+        currently viewing user may not have access to all of them.
+      operationId: get_accounts
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/accounts_list'
+        '404':
+          description: Unauthorized or not found
+    post:
+      tags:
+        - Accounts
+      summary: Add account
+      description: '[Super-user only] Add a new account'
+      operationId: add_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/account_add'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/account'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: licences
+                    error:
+                      type: string
+                      example: License number cannot be negative.
+        '404':
+          description: Unauthorized or not found
+  /accounts/{account_id}:
+    get:
+      tags:
+        - Accounts
+      summary: ✓ Account details
+      description: Details of the given account
+      operationId: get_account
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/account'
+        '404':
+          description: Unauthorized or not found
+    put:
+      tags:
+        - Accounts
+      summary: Account update
+      description: >
+        Update the given account information. Note that the id will never be
+        overwritten from the source JSON.
+      operationId: put_account
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/account_create_update'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/account'
+        '404':
+          description: Unauthorized or not found
+    delete:
+      tags:
+        - Accounts
+      summary: Delete account
+      description: Delete the given account
+      operationId: delete_account
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '404':
+          description: Unauthorized or not found
+  /accounts/{account_id}/users:
+    get:
+      tags:
+        - Accounts
+        - Users
+      summary: ✓ List of account's users
+      description: >
+        List of the users in the given account, only for the vaults current user
+        is vault admin of. Adding the full parameter will add vault permissions.
+      operationId: get_account_users
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+        - in: query
+          name: full
+          schema:
+            type: string
+          description: >-
+            If present with any value, the schema will include vault permissions
+            as well.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/users'
+        '404':
+          description: Unauthorized or not found
+  /accounts/{account_id}/users/with_permissions:
+    get:
+      tags:
+        - Accounts
+        - Users
+      summary: ✓ List of account's users with permissions
+      description: >
+        List of the users in the given account, only for the vaults current user
+        is vault admin of. With vault projects and soon teams permissions.
+      operationId: get_account_users_with_permissions
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+        - in: query
+          name: full
+          schema:
+            type: string
+          description: >-
+            If present with any value, the schema will include vault permissions
+            as well.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/users_with_permissions'
+        '404':
+          description: Unauthorized or not found
+  /accounts/{account_id}/users/{user_id}/permissions:
+    get:
+      tags:
+        - Accounts
+        - Users
+      summary: List of user permissions in account
+      description: |
+        List all the permissions of the given user.
+      operationId: get_account_user_permissions
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/account_user_permissions'
+        '404':
+          description: Unauthorized or not found
+  /accounts/{account_id}/vaults:
+    get:
+      tags:
+        - Accounts
+        - Vaults
+      summary: ✓ List of account's vaults
+      description: >
+        All the information associated with the vaults the currently logged on
+        user can manage.
+      operationId: get_account_vaults
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/vault_details'
+        '404':
+          description: Unauthorized or not found
+    post:
+      tags:
+        - Accounts
+        - Vaults
+      summary: Add vault
+      description: Add a new vault in given account
+      operationId: add_vault
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/vault_create_update'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/vault_simple'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validation_error'
+        '404':
+          description: Unauthorized or not found
+  /accounts/{account_id}/vaults/with_projects:
+    get:
+      tags:
+        - Accounts
+        - Vaults
+      summary: ✓ List of account's vaults with projects
+      description: >
+        All the information associated with the vaults the currently logged on
+        user can manage. And the associated projects.
+      operationId: get_account_vaults_with_projects
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/vault_details_with_projects'
+        '404':
+          description: Unauthorized or not found
+  /vaults/{vault_id}:
+    get:
+      tags:
+        - Vaults
+      summary: ✓ Vault details
+      description: Details of the given vault
+      operationId: get_vault
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/vault_details'
+        '404':
+          description: Unauthorized or not found
+    put:
+      tags:
+        - Vaults
+      summary: Update vault
+      description: Update vault settings and information
+      operationId: update_vault
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/vault_create_update'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/vault_simple'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validation_error'
+        '404':
+          description: Unauthorized or not found
+    delete:
+      tags:
+        - Vaults
+      summary: Delete vault
+      description: Delete the given vault
+      operationId: delete_vault
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '204':
+          description: Success
+        '404':
+          description: Unauthorized or not found
+  /vaults/{vault_id}/with_projects:
+    get:
+      tags:
+        - Vaults
+      summary: ✓ Vault details with projects
+      description: Details of the given vault with its projects
+      operationId: get_vault_with_projects
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/vault_details_with_projects'
+        '404':
+          description: Unauthorized or not found
+  /vaults/{vault_id}/users:
+    get:
+      tags:
+        - Vaults
+        - Users
+      summary: ✓ List of vault's users
+      description: List of all the users in the given vault
+      operationId: get_vault_users
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/user'
+        '404':
+          description: Unauthorized or not found
+    post:
+      tags:
+        - Vaults
+        - Users
+      summary: ✓ Add user to vault
+      description: >
+        Add a user in given vault. To add an existing user, just send an object
+        with the email as the user part of the payload.
+      operationId: add_new_user_to_vault
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/vault_user_create'
+                - $ref: '#/components/schemas/vault_user_create_existing'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user_with_vault_permissions_with_errors'
+        '404':
+          description: Unauthorized or not found
+  /vaults/{vault_id}/users/with_permissions:
+    get:
+      tags:
+        - Vaults
+        - Users
+      summary: ✓ List of vault's users with permissions
+      description: >-
+        List of all the users in the given vault with their vault and projects
+        permissions
+      operationId: get_vault_users_with_permissions
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/vault_user_with_permissions'
+        '404':
+          description: Unauthorized or not found
+  /vaults/{vault_id}/users/{user_id}/permissions:
+    get:
+      tags:
+        - Vaults
+        - Users
+      summary: ✓ Get user permissions in vault
+      description: Details of the specified user permissions in vault
+      operationId: get_vault_user_permission
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/vault_permissions'
+        '404':
+          description: Unauthorized or not found
+    put:
+      tags:
+        - Vaults
+        - Users
+      summary: ✓ Update user permissions in vault
+      description: |
+        Update the given user's permissions in vault.
+      operationId: set_user_permissions_in_vault
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/vault_permissions_create_update'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/vault_permissions'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/vault_permissions_with_errors'
+        '404':
+          description: Unauthorized or not found
+    delete:
+      tags:
+        - Vaults
+        - Users
+      summary: ✓ Remove user from vault
+      description: Remove the user from this vault
+      operationId: delete_user_from_vault
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Unauthorized or not found
+  /vaults/{vault_id}/projects:
+    get:
+      tags:
+        - Vaults
+      summary: ✓ List of vault's projects
+      description: List of all the projects in the given vault
+      operationId: get_vault_projects
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/vault_projects'
+        '404':
+          description: Unauthorized or not found
+    post:
+      tags:
+        - Vaults
+        - Projects
+      summary: ✓ Add project
+      description: Add a new project in given vault
+      operationId: add_project
+      parameters:
+        - in: path
+          name: vault_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/project_create_update'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_with_errors'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_with_errors'
+        '404':
+          description: Unauthorized or not found
+  /projects/{project_id}:
+    get:
+      tags:
+        - Projects
+      summary: ✓ Project details
+      description: Details of the specified project
+      operationId: get_project
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_with_errors'
+        '404':
+          description: Unauthorized or not found
+    put:
+      tags:
+        - Projects
+      summary: ✓ Update project
+      description: >
+        Update the given project's information. Note that the id will never be
+        overwritten from the source JSON.
+      operationId: put_project
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/project_create_update'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_with_errors'
+        '404':
+          description: Unauthorized or not found
+    delete:
+      tags:
+        - Projects
+      summary: ✓ Delete project
+      description: Delete the given project
+      operationId: delete_project
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '204':
+          description: Success
+        '404':
+          description: Unauthorized or not found
+  /projects/{project_id}/users:
+    get:
+      tags:
+        - Projects
+        - Users
+      summary: ✓ List of project's users
+      description: List of the users in the given project
+      operationId: get_project_users
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_users'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user_with_project_permissions_with_errors'
+        '404':
+          description: Unauthorized or not found
+  /projects/{project_id}/users/with_permissions:
+    get:
+      tags:
+        - Projects
+        - Users
+      summary: ✓ List of project's users with details
+      description: >-
+        List of the users in the given project with the user permissions in that
+        project added
+      operationId: get_project_users_with_permissions
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_users_with_permissions'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user_with_project_permissions_with_errors'
+        '404':
+          description: Unauthorized or not found
+  /projects/{project_id}/users/{user_id}/permissions:
+    get:
+      tags:
+        - Projects
+        - Users
+      summary: ✓ Get user permissions in project
+      description: Details of the specified user permissions in project
+      operationId: get_project_user_permissions
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_permissions'
+        '404':
+          description: Unauthorized or not found
+    put:
+      tags:
+        - Projects
+        - Users
+      summary: ✓ Update user permissions in project
+      description: |
+        Update the given user's permissions in project.
+      operationId: set_user_permissions_in_project
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/project_permissions_create_update'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_permissions'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_permissions_with_errors'
+        '404':
+          description: Unauthorized or not found
+    post:
+      tags:
+        - Projects
+        - Users
+      summary: ✓ Add user to project
+      description: |
+        Add the user to project with the given permissions.
+      operationId: add_user_to_project
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/project_permissions_create_update'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_permissions'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/project_permissions_with_errors'
+        '404':
+          description: Unauthorized or not found
+    delete:
+      tags:
+        - Projects
+        - Users
+      summary: ✓ Remove user from project
+      description: Remove the user from this project
+      operationId: delete_user_from_project
+      parameters:
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '204':
+          description: Success
+        '404':
+          description: Unauthorized or not found
+  /accounts/{account_id}/teams:
+    get:
+      tags:
+        - Accounts
+        - Teams
+      summary: ✓ List of account's teams
+      description: >
+        List the teams in the given account, only if current user is vault admin
+        of all vaults in account.
+      operationId: get_account_teams
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/account_teams'
+        '404':
+          description: Unauthorized or not found
+    post:
+      tags:
+        - Accounts
+        - Teams
+      summary: Add team to account
+      description: Add a new team in a given account
+      operationId: add_team
+      parameters:
+        - in: path
+          name: account_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/team_create_update'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_with_errors'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_with_errors'
+        '404':
+          description: Unauthorized or not found
+  /teams/{team_id}:
+    get:
+      tags:
+        - Teams
+      summary: ✓ Team details
+      description: Details of the specified team
+      operationId: get_team
+      parameters:
+        - in: path
+          name: team_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_with_projects'
+        '404':
+          description: Unauthorized or not found
+    put:
+      tags:
+        - Teams
+      summary: Update team
+      description: >
+        Update the given team's information. Note that the id will never be
+        overwritten from the source JSON.
+      operationId: put_team
+      parameters:
+        - in: path
+          name: team_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/team_create_update'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_with_errors'
+        '404':
+          description: Unauthorized or not found
+    delete:
+      tags:
+        - Teams
+      summary: ✓ Delete team
+      description: Delete the given team
+      operationId: delete_team
+      parameters:
+        - in: path
+          name: team_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '204':
+          description: Success
+        '404':
+          description: Unauthorized or not found
+  /teams/{team_id}/users:
+    post:
+      tags:
+        - Teams
+      summary: ✓ Add user to team
+      description: |
+        Add the user to team with the given permissions.
+      operationId: add_user_to_team
+      parameters:
+        - in: path
+          name: team_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/team_membership_create_update'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_with_projects'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_with_projects'
+        '404':
+          description: Unauthorized or not found
+  /teams/{team_id}/users/{user_id}:
+    delete:
+      tags:
+        - Teams
+      summary: ✓ Remove user from team
+      description: Remove a user from a team
+      operationId: delete_user_from_team
+      parameters:
+        - in: path
+          name: team_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_with_projects'
+        '404':
+          description: Unauthorized or not found
+  /teams/{team_id}/projects:
+    post:
+      tags:
+        - Teams
+      summary: ✓ Add project to team
+      description: |
+        Add a project to a team.
+      operationId: add_project_to_team
+      parameters:
+        - in: path
+          name: team_id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/team_project_create_update'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_project_with_errors'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team_project_with_errors'
+        '404':
+          description: Unauthorized or not found
+  /teams/{team_id}/projects/{project_id}:
+    delete:
+      tags:
+        - Teams
+      summary: ✓ Remove project from team
+      description: Remove a project from a team
+      operationId: delete_project_from_team
+      parameters:
+        - in: path
+          name: team_id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: project_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Unauthorized or not found
+components:
+  schemas:
+    account:
+      type: object
+      required:
+        - id
+        - name
+        - users_count
+        - vaults_count
+        - licenses
+        - maximum_processors
+        - single_sign_on
+        - registration_types_selection
+        - linking_across_vaults
+        - registration_types_selection
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Big Pharma
+        users_count:
+          type: integer
+          example: 42198
+        vaults_count:
+          type: integer
+          example: 4
+        licenses:
+          type: integer
+          example: 50000
+        maximum_processors:
+          type: integer
+          example: 10
+        single_sign_on:
+          type: boolean
+          example: true
+        linking_across_vaults:
+          type: boolean
+          example: false
+        registration_types_selection:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+        updated_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+    accounts_list:
+      type: array
+      items:
+        $ref: '#/components/schemas/account'
+    account_add:
+      type: object
+      required:
+        - name
+        - licenses
+      properties:
+        name:
+          type: string
+          example: Big pharma
+        licenses:
+          type: integer
+          example: 1000
+        maximum_processors:
+          type: integer
+          example: 100
+          default: 3
+          description: Maximum number of processors running at once
+        linking_across_vaults:
+          type: boolean
+          example: false
+          default: false
+        registration_type_selection:
+          type: boolean
+          example: false
+          default: false
+    account_create_update:
+      type: object
+      required:
+        - name
+        - licenses
+        - maximum_processors
+        - registration_types_selection
+        - linking_across_vaults
+        - registration_types_selection
+      properties:
+        name:
+          type: string
+          example: Big Pharma
+        licenses:
+          type: integer
+          example: 50000
+        maximum_processors:
+          type: integer
+          example: 10
+        linking_across_vaults:
+          type: boolean
+          example: false
+        registration_types_selection:
+          type: boolean
+          example: false
+    user:
+      type: object
+      required:
+        - id
+        - email
+        - first_name
+        - last_name
+        - mask_structures
+        - disabled
+        - api_keys_count
+        - created_at
+        - updated_at
+        - last_logged_in
+      properties:
+        id:
+          type: integer
+          example: 1654
+        email:
+          type: string
+          example: jane_doe@example.com
+        first_name:
+          type: string
+          example: Jane
+        last_name:
+          type: string
+          example: Doe
+        mask_structures:
+          type: boolean
+          example: true
+          default: false
+        disabled:
+          type: boolean
+          example: true
+          default: false
+        api_keys_count:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+        updated_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+        last_logged_in:
+          type:
+            - string
+            - 'null'
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+    users:
+      type: array
+      items:
+        $ref: '#/components/schemas/user'
+    role:
+      type: string
+      enum:
+        - readonly
+        - read-download
+        - read-export
+        - biology-read-add
+        - read-add
+        - biology full access
+        - full access
+        - vault admin
+      example: biology-read-add
+    vault_permissions:
+      type: object
+      required:
+        - user_id
+        - vault_id
+        - can_witness
+        - eln_witnessing_admin
+        - role_name
+        - created_at
+        - updated_at
+      properties:
+        user_id:
+          type: integer
+          example: 14
+        vault_id:
+          type: integer
+          example: 1234
+        can_witness:
+          type: boolean
+          default: true
+          example: true
+        eln_witnessing_admin:
+          type: boolean
+          example: false
+        role_name:
+          $ref: '#/components/schemas/role'
+        created_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+        updated_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+    project_permissions:
+      type: object
+      required:
+        - user_id
+        - vault_id
+        - project_id
+        - can_manage_project
+        - can_edit_data
+        - created_at
+        - updated_at
+      properties:
+        user_id:
+          type: integer
+          example: 4
+        vault_id:
+          type: integer
+          example: 455
+        project_id:
+          type: integer
+          example: 4156
+        can_manage_project:
+          type: boolean
+          example: true
+        can_edit_data:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+        updated_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+    team_membership_create_update:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1654
+          description: User ID
+        can_manage_project:
+          type: boolean
+          example: true
+        can_edit_data:
+          type: boolean
+          example: true
+    team_membership:
+      allOf:
+        - type: object
+          properties:
+            team_id:
+              type: integer
+              example: 16
+              description: Team ID
+            user_id:
+              type: integer
+              example: 16545
+              description: User ID
+            created_at:
+              type: string
+              description: Timestamp in ISO-8601 UTC
+              example: '2021-10-15T01:56:41.000Z'
+            updated_at:
+              type: string
+              description: Timestamp in ISO-8601 UTC
+              example: '2021-10-15T01:56:41.000Z'
+        - $ref: '#/components/schemas/team_membership_create_update'
+    account_user_permissions:
+      type: object
+      properties:
+        vault_permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/vault_permissions'
+        project_permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/project_permissions'
+        team_memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/team_membership'
+    users_with_permissions:
+      type: array
+      items:
+        allOf:
+          - $ref: '#/components/schemas/user'
+          - $ref: '#/components/schemas/account_user_permissions'
+    registration_type:
+      type: object
+      required:
+        - registration_type
+        - name
+      properties:
+        registration_type:
+          type: string
+          example: CHEMICAL_STRUCTURE
+        name:
+          type: string
+          example: Structure
+    vault_simple:
+      type: object
+      required:
+        - id
+        - account_id
+        - name
+        - api_enabled
+        - cdd_restricted
+        - registration_types
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          example: 4231987
+        account_id:
+          type: integer
+          example: 423
+        name:
+          type: string
+          example: Fancy new drugs
+        api_enabled:
+          type: boolean
+          example: true
+        cdd_restricted:
+          type: boolean
+          description: Forbids CDD to access the content of that vault
+          example: true
+          default: false
+        registration_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/registration_type'
+        created_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+        updated_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+    vault_details:
+      allOf:
+        - $ref: '#/components/schemas/vault_simple'
+        - type: object
+          required:
+            - projects_count
+            - users_count
+          properties:
+            projects_count:
+              type: integer
+              example: 3
+            users_count:
+              type: integer
+              example: 5
+    vault_create_update:
+      type: object
+      required:
+        - name
+        - description
+        - api_enabled
+        - restricted
+        - registration_types
+      properties:
+        name:
+          type: string
+          example: Fancy new drugs
+        description:
+          type: string
+          example: Fancy new drugs in more details
+        api_enabled:
+          type: boolean
+          example: true
+        restricted:
+          type: boolean
+          description: Forbids CDD to access the content of that vault
+          example: true
+          default: false
+        registration_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/registration_type'
+    validation_error:
+      type: object
+      properties:
+        messages:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            name: has already been taken
+        details:
+          type: object
+          example:
+            name:
+              error: taken
+              value: already existing thing
+          additionalProperties:
+            type: object
+            properties:
+              error:
+                type: string
+              value:
+                type: string
+    project:
+      type: object
+      required:
+        - id
+        - vault_id
+        - name
+        - description
+        - users_count
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          example: 4217
+        vault_id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Colored molecules
+        description:
+          type: string
+          example: Shiny shiny colored molecules
+        users_count:
+          type: integer
+          example: 2
+        created_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+        updated_at:
+          type: string
+          description: Timestamp in ISO-8601 UTC
+          example: '2021-10-15T01:56:41.000Z'
+    vault_details_with_projects:
+      allOf:
+        - $ref: '#/components/schemas/vault_simple'
+        - type: object
+          required:
+            - projects_count
+            - users_count
+            - projects
+          properties:
+            projects_count:
+              type: integer
+              example: 3
+            users_count:
+              type: integer
+              example: 5
+            projects:
+              type: array
+              items:
+                $ref: '#/components/schemas/project'
+    vault_user_create:
+      type: object
+      required:
+        - email
+        - first_name
+        - last_name
+        - role
+        - can_witness
+        - eln_witnessing_admin
+      properties:
+        email:
+          type: string
+          example: jane_doe@example.com
+        first_name:
+          type: string
+          example: Jane
+        last_name:
+          type: string
+          example: Doe
+        role:
+          $ref: '#/components/schemas/role'
+        can_witness:
+          type: boolean
+          example: true
+        eln_witnessing_admin:
+          type: boolean
+          example: true
+    vault_user_create_existing:
+      type: object
+      required:
+        - email
+        - role
+        - can_witness
+        - eln_witnessing_admin
+      properties:
+        email:
+          type: string
+          example: jane_doe@example.com
+        role:
+          $ref: '#/components/schemas/role'
+        can_witness:
+          type: boolean
+          example: true
+        eln_witnessing_admin:
+          type: boolean
+          example: true
+    errors:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            first_name: First name can't be blank
+    vault_permissions_with_errors:
+      allOf:
+        - $ref: '#/components/schemas/vault_permissions'
+        - $ref: '#/components/schemas/errors'
+    user_with_vault_permissions_with_errors:
+      allOf:
+        - $ref: '#/components/schemas/user'
+        - type: object
+          properties:
+            vault_permissions:
+              type: array
+              items:
+                $ref: '#/components/schemas/vault_permissions_with_errors'
+        - $ref: '#/components/schemas/errors'
+    vault_user_with_permissions:
+      allOf:
+        - $ref: '#/components/schemas/user'
+        - type: object
+          properties:
+            vault_permissions:
+              type: array
+              items:
+                $ref: '#/components/schemas/vault_permissions'
+            project_permissions:
+              type: array
+              items:
+                $ref: '#/components/schemas/project_permissions'
+    vault_permissions_create_update:
+      type: object
+      required:
+        - role_name
+      properties:
+        can_witness:
+          type: boolean
+          default: true
+          example: true
+        eln_witnessing_admin:
+          type: boolean
+          example: false
+        role_name:
+          $ref: '#/components/schemas/role'
+    project_with_errors:
+      allOf:
+        - $ref: '#/components/schemas/project'
+        - $ref: '#/components/schemas/errors'
+    vault_projects:
+      type: array
+      items:
+        $ref: '#/components/schemas/project_with_errors'
+    project_create_update:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          example: Colored molecules
+        description:
+          type: string
+          example: Shiny shiny colored molecules
+    project_users:
+      type: array
+      items:
+        $ref: '#/components/schemas/user'
+    project_permissions_with_errors:
+      allOf:
+        - $ref: '#/components/schemas/project_permissions'
+        - $ref: '#/components/schemas/errors'
+    user_with_project_permissions_with_errors:
+      allOf:
+        - $ref: '#/components/schemas/user'
+        - type: object
+          properties:
+            project_permissions:
+              type: array
+              items:
+                $ref: '#/components/schemas/project_permissions_with_errors'
+        - $ref: '#/components/schemas/errors'
+    user_with_project_permissions:
+      allOf:
+        - $ref: '#/components/schemas/user'
+        - type: object
+          properties:
+            project_permissions:
+              $ref: '#/components/schemas/project_permissions'
+    project_users_with_permissions:
+      type: array
+      items:
+        $ref: '#/components/schemas/user_with_project_permissions'
+    project_permissions_create_update:
+      type: object
+      required:
+        - can_manage_project
+        - can_edit_data
+      properties:
+        can_manage_project:
+          type: boolean
+          example: true
+        can_edit_data:
+          type: boolean
+          example: true
+    team_create_update:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Chemistry team
+    team:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 1654
+            created_at:
+              type: string
+              description: Timestamp in ISO-8601 UTC
+              example: '2021-10-15T01:56:41.000Z'
+            updated_at:
+              type: string
+              description: Timestamp in ISO-8601 UTC
+              example: '2021-10-15T01:56:41.000Z'
+            user_id:
+              type: integer
+              example: 41654
+              description: Owner of the team
+            account_id:
+              type: integer
+              example: 41654
+              description: Account this team is part of
+        - $ref: '#/components/schemas/team_create_update'
+    account_teams:
+      type: array
+      items:
+        $ref: '#/components/schemas/team'
+    team_with_errors:
+      allOf:
+        - $ref: '#/components/schemas/team'
+        - $ref: '#/components/schemas/errors'
+    team_with_projects:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 1654
+            created_at:
+              type: string
+              description: Timestamp in ISO-8601 UTC
+              example: '2021-10-15T01:56:41.000Z'
+            updated_at:
+              type: string
+              description: Timestamp in ISO-8601 UTC
+              example: '2021-10-15T01:56:41.000Z'
+            team_memberships:
+              type: array
+              items:
+                $ref: '#/components/schemas/team_membership'
+            projects:
+              type: array
+              items:
+                $ref: '#/components/schemas/project'
+    team_project_create_update:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1654
+    team_project_with_errors:
+      allOf:
+        - $ref: '#/components/schemas/project'
+        - $ref: '#/components/schemas/errors'
